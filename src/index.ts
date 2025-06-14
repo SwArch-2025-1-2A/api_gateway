@@ -1,5 +1,7 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
+import { IncomingMessage, ServerResponse } from 'node:http';
+import { signUp, SignUp } from './resolvers/authResolvers.js';
 import { todosResolver, createTodo } from './resolvers/todoResolvers.js';
 import { CreateGroup, createGroupResolver, groupsResolver } from './resolvers/groupsResolvers.js';
 import { dateScalar } from './customScalars.js';
@@ -10,6 +12,17 @@ const typeDefs = `#graphql
   
     scalar Date  
 
+    input SignUp {
+      email: String!
+      password: String!
+    }
+
+    type User {
+      email: String!
+      username: String!
+      isSuperUser: Boolean!
+    }
+    
     type Todo {
       id: ID!
       text: String!
@@ -71,10 +84,19 @@ const typeDefs = `#graphql
     }
 
     type Mutation {
+      signUp(input: SignUp!): User!
       createTodo(input: NewTodo!): Todo!
       createGroup(input: NewGroup!): GroupWithoutImage!
-    }    
+    }
 `;
+
+/**
+ * This is our Context Interface. Contexts will be used by various resolvers
+ */
+interface Context {
+  req: IncomingMessage;
+  res: ServerResponse; 
+}
 
 /**
  * We should put all of our resolvers in this object:
@@ -86,6 +108,9 @@ const resolvers = {
     groups: async() => groupsResolver()
   },
   Mutation: {
+    signUp:       async (_: any, { input }: { input: SignUp }, ) => {
+      return await signUp(input)
+    },
     createTodo:   (_: any, { input }: { input: { text: string, name: string } }) => {
       return createTodo(input.text, input.name); 
     },
@@ -95,13 +120,14 @@ const resolvers = {
   },
 };
 
-const server = new ApolloServer({
+const server = new ApolloServer<Context>({
   typeDefs,
-  resolvers,
+  resolvers,  
 });
 
 const { url } = await startStandaloneServer(server, {
   listen: { port: 4000 }, // TODO: usar una variable de entorno
+  context: async ({req, res}) => ({ req, res }),
 });
 
 console.log(`🚀 Server ready at: ${url}`);
