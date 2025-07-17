@@ -1,0 +1,30 @@
+#!include:.gitignore
+
+.gcloudignore
+
+# Git-related
+.git
+.gitignore
+.gitmodules
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Submodules
+auth
+bulk_ms
+categories_ms
+events_ms
+groups_ms
+users_ms
+
+# Docs
+README.md
+LICENSE
+.env.example
+.vscode
+
+#################
+# Allow-list
+!.env
